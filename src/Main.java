@@ -1,99 +1,110 @@
-import java.util.Scanner;
+import java.util.*;
 
-public class PalindromCheckerApp {
+// Strategy Interface
+interface PalindromeStrategy {
+    boolean check(String input);
+}
 
-    // Node class for Singly Linked List
-    static class Node {
-        char data;
-        Node next;
+// Concrete Strategy 1: Stack-Based Implementation
+class UC12 implements PalindromeStrategy {
 
-        Node(char data) {
-            this.data = data;
-            this.next = null;
+    @Override
+    public boolean check(String input) {
+
+        String normalized = input.toLowerCase().replaceAll("\\s+", "");
+        Stack<Character> stack = new Stack<>();
+
+        for (char ch : normalized.toCharArray()) {
+            stack.push(ch);
         }
+
+        for (char ch : normalized.toCharArray()) {
+            if (ch != stack.pop()) {
+                return false;
+            }
+        }
+
+        return true;
     }
+}
+
+// Concrete Strategy 2: Deque-Based Implementation
+class DequeStrategy implements PalindromeStrategy {
+
+    @Override
+    public boolean check(String input) {
+
+        String normalized = input.toLowerCase().replaceAll("\\s+", "");
+        Deque<Character> deque = new ArrayDeque<>();
+
+        for (char ch : normalized.toCharArray()) {
+            deque.addLast(ch);
+        }
+
+        while (deque.size() > 1) {
+            if (!deque.removeFirst().equals(deque.removeLast())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+// Context Class
+class PalindromeContext {
+
+    private PalindromeStrategy strategy;
+
+    // Inject strategy dynamically
+    public void setStrategy(PalindromeStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public boolean executeStrategy(String input) {
+        return strategy.check(input);
+    }
+}
+
+// Main Application
+public class UseCase12PalindromeCheckerApp {
 
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
+        PalindromeContext context = new PalindromeContext();
 
-        System.out.println("===== UC8: Linked List Based Palindrome Checker =====");
+        System.out.println("===== UC12: Strategy Pattern Palindrome Checker =====");
+        System.out.println("Choose Strategy:");
+        System.out.println("1. Stack-Based Strategy");
+        System.out.println("2. Deque-Based Strategy");
+        System.out.print("Enter choice (1 or 2): ");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+
         System.out.print("Enter a string: ");
         String input = scanner.nextLine();
 
-        // Normalize input
-        input = input.toLowerCase().replaceAll("\\s+", "");
-
-        if (input.length() == 0) {
-            System.out.println("Result: The given string is a Palindrome.");
+        // Inject strategy at runtime
+        if (choice == 1) {
+            context.setStrategy(new StackStrategy());
+        } else if (choice == 2) {
+            context.setStrategy(new DequeStrategy());
+        } else {
+            System.out.println("Invalid choice.");
+            scanner.close();
             return;
         }
 
-        // Step 1: Convert string to linked list
-        Node head = null;
-        Node tail = null;
+        boolean result = context.executeStrategy(input);
 
-        for (char ch : input.toCharArray()) {
-            Node newNode = new Node(ch);
-            if (head == null) {
-                head = newNode;
-                tail = newNode;
-            } else {
-                tail.next = newNode;
-                tail = newNode;
-            }
-        }
-
-        // Step 2: Find middle using Fast & Slow pointers
-        Node slow = head;
-        Node fast = head;
-
-        while (fast != null && fast.next != null) {
-            slow = slow.next;
-            fast = fast.next.next;
-        }
-
-        // Step 3: Reverse second half (in-place)
-        Node secondHalf = reverseList(slow);
-
-        // Step 4: Compare first half and reversed second half
-        Node firstHalf = head;
-        Node tempSecondHalf = secondHalf;
-
-        boolean isPalindrome = true;
-
-        while (tempSecondHalf != null) {
-            if (firstHalf.data != tempSecondHalf.data) {
-                isPalindrome = false;
-                break;
-            }
-            firstHalf = firstHalf.next;
-            tempSecondHalf = tempSecondHalf.next;
-        }
-
-        // Output result
-        if (isPalindrome) {
+        if (result) {
             System.out.println("Result: The given string is a Palindrome.");
         } else {
             System.out.println("Result: The given string is NOT a Palindrome.");
         }
 
         scanner.close();
-    }
-
-    // Method to reverse linked list
-    public static Node reverseList(Node head) {
-        Node prev = null;
-        Node current = head;
-        Node next = null;
-
-        while (current != null) {
-            next = current.next;
-            current.next = prev;
-            prev = current;
-            current = next;
-        }
-
-        return prev;
     }
 }
